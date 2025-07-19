@@ -1,0 +1,51 @@
+version: '3'
+
+services:
+  intruder-alert:
+    image: ghcr.io/verifiedjoseph/intruder-alert:1.22.1
+    container_name: intruder-alert
+    restart: unless-stopped
+    environment:
+      - IA_TIMEZONE=Europe/London
+      - IA_SYSTEM_LOG_TIMEZONE=UTC
+      - IA_LOG_FOLDER=/app/backend/data/logs
+      - IA_MAXMIND_LICENSE_KEY=${MAXMIND_LICENSE_KEY}
+    volumes:
+      - ./fail2ban_logs/fail2ban.log:/app/backend/data/logs/fail2ban.log:ro
+      - ./fail2ban_logs/fail2ban.log.1:/app/backend/data/logs/fail2ban.log.1:ro
+      - ./fail2ban_logs/fail2ban.log.2.gz:/app/backend/data/logs/fail2ban.log.2.gz:ro
+      - ./fail2ban_logs/fail2ban.log.3.gz:/app/backend/data/logs/fail2ban.log.3.gz:ro
+      - ./fail2ban_logs/fail2ban.log.4.gz:/app/backend/data/logs/fail2ban.log.4.gz:ro
+    ports:
+      - '127.0.0.1:8080:8080'
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  log-normalizer:
+    build: .
+    container_name: nginx-log-normalizer
+    command: python3 normalize_nginx_log.py
+    volumes:
+      - ./report/logs/access.log:/data/access.log:ro
+      - ./normalized:/data/normalized
+    environment:
+      - INPUT_LOG=/data/access.log
+      - OUTPUT_DIR=/data/normalized
+
+  goaccess:
+    image: allinurl/goaccess
+    container_name: goaccess-report
+    command: >
+      /bin/sh -c "
+      mkdir -p /report &&
+      goaccess /logs/access.normalized.log
+        --log-format=COMBINED
+        --real-time-html
+        --output=/report/index.html"
+    volumes:
+      - ./normalized/proxy-host-1_access.normalized.log:/logs/access.normalized.log:ro
+      - ./goaccess-report:/report
+    ports:
+      - "7890:7890"
