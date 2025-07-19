@@ -2,7 +2,7 @@ version: '3'
 
 services:
   intruder-alert:
-    image: ghcr.io/verifiedjoseph/intruder-alert:1.0.0
+    image: ghcr.io/verifiedjoseph/intruder-alert:latest
     container_name: intruder-alert
     environment:
       - IA_TIMEZONE=America/Los_Angeles
@@ -15,7 +15,7 @@ services:
       - ./fail2ban_logs/fail2ban.log.3.gz:/app/backend/logs/fail2ban.log.3.gz:ro
       - ./fail2ban_logs/fail2ban.log.4.gz:/app/backend/logs/fail2ban.log.4.gz:ro
     ports:
-      - "127.0.0.1:8080:8080"
+      - "0.0.0.0:8080:8080"
     security_opt:
       - no-new-privileges:true
     tmpfs:
@@ -32,7 +32,7 @@ services:
     command: python3 /app/normalize_nginx_log.py
 
   goaccess-report:
-    image: allinurl/goaccess
+    image: allinurl/goaccess:latest
     container_name: goaccess-report
     volumes:
       - ./normalized_logs:/logs:ro
