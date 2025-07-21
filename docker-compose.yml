@@ -8,12 +8,10 @@ services:
       - IA_TIMEZONE=America/Los_Angeles
       - IA_MAXMIND_LICENSE_KEY=${MAXMIND_LICENSE_KEY}
       - IA_LOG_FOLDER=/app/backend/logs
+      - IA_SYSTEM_LOG_TIMEZONE=America/Los_Angeles
     volumes:
-      - ./fail2ban_logs/fail2ban.log:/app/backend/logs/fail2ban.log:ro
-      - ./fail2ban_logs/fail2ban.log.1:/app/backend/logs/fail2ban.log.1:ro
-      - ./fail2ban_logs/fail2ban.log.2.gz:/app/backend/logs/fail2ban.log.2.gz:ro
-      - ./fail2ban_logs/fail2ban.log.3.gz:/app/backend/logs/fail2ban.log.3.gz:ro
-      - ./fail2ban_logs/fail2ban.log.4.gz:/app/backend/logs/fail2ban.log.4.gz:ro
+      - ./fail2ban_logs:/app/backend/data/logs:ro
+      - /var/log/fail2ban.log:/app/backend/data/logs/fail2ban.log:ro
     ports:
       - "0.0.0.0:8080:8080"
     security_opt:
@@ -27,7 +25,7 @@ services:
       context: ./nginx-log-normalizer
       dockerfile: Dockerfile
     volumes:
-      - ./nginx_logs:/logs
+      - /home/ryancox/AiRC-Frontend/data/nginx/logs/proxy-host-1_access.log:/srv/logs/access.log:ro
       - ./normalized_logs:/normalized
     command: python3 /app/normalize_nginx_log.py
 
@@ -35,20 +33,16 @@ services:
     image: allinurl/goaccess:latest
     container_name: goaccess-report
     volumes:
-      - ./normalized_logs:/logs:ro
+      - /home/ryancox/AiRC-Frontend/data/nginx/logs/proxy-host-1_access.log:/srv/logs/access.log:ro
       - ./report:/report
     command: >
-      goaccess /logs/access.normalized.log
-      --log-format=COMBINED
-      --date-format=%d/%b/%Y
-      --time-format=%T
-      --real-time-html
-      --output=/report/index.html
+      goaccess /srv/logs/access.log --log-format=COMBINED -o /report/index.html
 
   log-normalizer:
     build:
       context: ./log-normalizer
       dockerfile: Dockerfile
     volumes:
-      - ./fail2ban_logs:/logs
+      - ./fail2ban_logs:/app/backend/data/logs:ro
+      - /var/log/fail2ban.log:/app/backend/data/logs/fail2ban.log:ro
       - ./normalized_logs:/normalized

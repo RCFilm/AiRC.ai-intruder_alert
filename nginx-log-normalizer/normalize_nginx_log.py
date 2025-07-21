@@ -13,7 +13,10 @@ import time
 from typing import Generator, Optional
 
 
-INPUT_LOG = "fail2ban_logs/proxy-host-1_access.log"
+# Path inside the container where the nginx access log is mounted. This path
+# corresponds with the volume defined for the ``goaccess-report`` service in
+# ``docker-compose.yml``.
+INPUT_LOG = "/srv/logs/access.log"
 OUTPUT_LOG = "normalized/proxy-host-1_access.normalized.log"
 
 # Matches the timestamp, status code and client IP address from a standard
